@@ -51,19 +51,19 @@ public class ActivityEditText extends Activity {
 
         protected String doInBackground(String... strs){
             Log.i("On Json Data Load", "doInBackground");
-            return getJsonText();
+            return GpsDataUpdate();
         }
         protected void onPostExecute(String result){
             Log.i("On Json Data Load", "onPostExecute");
         }
     }
 
-    public String getJsonText(){
+    public String GpsDataUpdate(){
         StringBuffer sb = new StringBuffer();
         try{
             Log.i("On getJsonText", "Function Start");
-            String jsonPage = getStringFromUrl(
-                    "http://13.125.149.233/k2m.php");
+            String jsonPage = new HttpServerConnect().
+                    getData("http://13.124.201.205/k2m.php");
 
             Log.i("On getJsonText", "Parsing Start");
             JSONObject json = new JSONObject(jsonPage);
@@ -92,42 +92,5 @@ public class ActivityEditText extends Activity {
             e.printStackTrace();
         }
         return sb.toString();
-    }
-
-    public String getStringFromUrl(String pUrl){
-
-        Log.i("On getStringFromUrl", "Function Start");
-
-        BufferedReader bufferedReader = null;
-        HttpURLConnection httpURLConnection = null;
-
-        StringBuffer page = new StringBuffer();
-
-        try{
-            URL url = new URL(pUrl);
-            httpURLConnection = (HttpURLConnection)url.openConnection();
-            InputStream contentStream = httpURLConnection.getInputStream();
-
-            bufferedReader = new BufferedReader(new InputStreamReader(
-                    contentStream, "UTF-8"));
-            String line = null;
-
-            while((line = bufferedReader.readLine()) != null){
-                page.append(line);
-            }
-        }
-        catch(IOException e){
-            e.printStackTrace();
-        }
-        finally {
-            try{
-                bufferedReader.close();
-                httpURLConnection.disconnect();
-            }
-            catch(IOException e){
-                e.printStackTrace();
-            }
-        }
-        return page.toString();
     }
 }
