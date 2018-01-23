@@ -27,7 +27,7 @@ import java.util.List;
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
-    double xGps, yGps, busGps1, busGps2, busTest1, busTest2;
+    double xGps, yGps, busGps1, busGps2;
     TextView number, gps1, gps2, currentTime;
     String latitude, longitude, code, time;
     boolean loopFlag = true;
@@ -44,14 +44,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             number.setText(bundle.getString("bcode"));
             currentTime.setText(num + ""); // 테스트용
 
-            LatLng busLocation = new LatLng(busTest1, busTest2);
+            LatLng busLocation = new LatLng(busGps1, busGps2);
             LatLng stationLocation = new LatLng(xGps, yGps);
 
             mMap.clear();
 
             markerOptions = new MarkerOptions();
             markerOptions.position(busLocation).title(Geocoding()).snippet(
-                    "(" + busTest1 + ", " + busTest2 + ")").draggable(true);
+                    "(" + busGps1 + ", " + busGps2 + ")").draggable(true);
             mMap.addMarker(markerOptions);
 
             mMap.addMarker(new MarkerOptions().position(stationLocation).title(Geocoding())
@@ -74,11 +74,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Intent intent = getIntent();
         xGps = intent.getDoubleExtra("gpsX", 0);
         yGps = intent.getDoubleExtra("gpsY", 0);
-        busTest1 = xGps;
-        busTest2 = yGps;
 
-        gps1.setText(Double.toString(xGps));
-        gps2.setText(Double.toString(yGps));
         number.setText(intent.getStringExtra("bus"));
         currentTime.setText(intent.getStringExtra("time"));
 
@@ -86,6 +82,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+    }
+
+    public void onBackPressed(){ // 뒤로가기 버튼
+        super.onBackPressed();
+        loopFlag = false;
     }
 
     @Override
@@ -126,22 +127,22 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
-
     class GpsDataUpdate extends Thread{
 
         public void run(){
 
             try {
                 StringBuffer sb = new StringBuffer();
-                HttpServerConnect http = new HttpServerConnect();
-                String jsonPage = http.getData(
-                        "http://13.124.201.205/k2m.php");
-
-                JSONObject json = new JSONObject(jsonPage);
-                JSONArray jArr = json.getJSONArray("MyData");
-                json = jArr.getJSONObject(0);
 
                 while(loopFlag) {
+
+                    HttpServerConnect http = new HttpServerConnect();
+                    String jsonPage = http.getData(
+                            "http://13.124.201.205/k2m.php");
+
+                    JSONObject json = new JSONObject(jsonPage);
+                    JSONArray jArr = json.getJSONArray("MyData");
+                    json = jArr.getJSONObject(0);
 
                     Log.i("CheckOnLog", "onThreadRun");
 
@@ -158,10 +159,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     bundle.putString("bcode", code);
                     bundle.putInt("bnum", num); // 테스트용
                     message.setData(bundle);
-                    num += 1;
-                    busTest1 += 0.0005;
-                    busTest2 += 0.0005;
                     handler.sendMessage(message);
+                    num += 1;
 
                     Thread.sleep(5000);
                 }
