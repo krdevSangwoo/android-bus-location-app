@@ -7,7 +7,27 @@
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="지도 보기"
-        android:id="@+id/btn"/>
+        android:text="기흥역 지도 보기"
+        android:id="@+id/btnStationA"/>
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="강남대 정류장 지도 보기"
+        android:id="@+id/btnStationB"/>
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="씨유 앞 지도 보기"
+        android:id="@+id/btnStationC"/>
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="인사관 지도 보기"
+        android:id="@+id/btnStationD"/>
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="이공관 지도 보기"
+        android:id="@+id/btnStationE"/>
 
 </LinearLayout>

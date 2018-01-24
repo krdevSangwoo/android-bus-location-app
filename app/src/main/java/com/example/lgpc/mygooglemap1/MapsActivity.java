@@ -1,6 +1,8 @@
 package com.example.lgpc.mygooglemap1;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.Address;
 import android.location.Geocoder;
 import android.os.Handler;
@@ -14,26 +16,32 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
-    double xGps, yGps, busGps1, busGps2;
-    TextView number, gps1, gps2, currentTime;
-    String latitude, longitude, code, time;
+    double xGps, yGps, busGps1, busGps2; // 정류장 위치와 버스 위치
+    TextView number, gps1, gps2, currentTime, stationHead, stationInform;
+    String latitude, longitude, code, time, name;
     boolean loopFlag = true;
-    int num = 1;
-    MarkerOptions markerOptions;
+    Bitmap bus, busStation;
+    ArrayList<Double> stationLatitude, stationLongitude;
+    ArrayList<String> stationName;
+    ArrayList<LatLng> stationGps;
 
+    // 실시간 처리
     Handler handler = new Handler(new Handler.Callback(){
         public boolean handleMessage(Message message){
             Log.i("CheckOnLog", "onHandler");
@@ -42,21 +50,35 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             gps1.setText(latitude);
             gps2.setText(longitude);
             number.setText(bundle.getString("bcode"));
-            currentTime.setText(num + ""); // 테스트용
+            currentTime.setText(bundle.getString("btime"));
 
             LatLng busLocation = new LatLng(busGps1, busGps2);
-            LatLng stationLocation = new LatLng(xGps, yGps);
 
             mMap.clear();
 
-            markerOptions = new MarkerOptions();
-            markerOptions.position(busLocation).title(Geocoding()).snippet(
-                    "(" + busGps1 + ", " + busGps2 + ")").draggable(true);
-            mMap.addMarker(markerOptions);
+            // 비트맵 변수에 이미지 받아와서 사이즈 조절
+            bus = BitmapFactory.decodeResource(getResources(), R.drawable.bus);
+            bus = Bitmap.createScaledBitmap(bus, 45, 38, true);
 
-            mMap.addMarker(new MarkerOptions().position(stationLocation).title(Geocoding())
-                    .snippet("(" + xGps + ", " + yGps + ")")).setDraggable(true);
+            busStation = BitmapFactory.decodeResource(getResources(), R.drawable.bus_station);
+            busStation = Bitmap.createScaledBitmap(busStation,
+                    35, 35, true);
 
+            stationMarking(mMap);
+
+            mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+                @Override
+                public boolean onMarkerClick(Marker marker) {
+                    stationHead.setText(marker.getTitle());
+                    stationInform.setText(marker.getSnippet());
+                    return false;
+                }
+            });
+
+            mMap.addMarker(new MarkerOptions().position(busLocation).
+                    icon(BitmapDescriptorFactory.fromBitmap(bus)).
+                    title(Geocoding(busLocation)).
+                    snippet("(" + busGps1 + ", " + busGps2 + ")").draggable(true));
             return true;
         }
     });
@@ -70,13 +92,20 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         gps1 = (TextView)findViewById(R.id.gps1);
         gps2 = (TextView)findViewById(R.id.gps2);
         currentTime = (TextView)findViewById(R.id.currentTime);
+        stationHead = (TextView)findViewById(R.id.stationHead);
+        stationInform = (TextView)findViewById(R.id.stationInform);
 
-        Intent intent = getIntent();
+        Intent intent = getIntent(); // 클릭하여 넘어온 정류장의 데이터 받기
         xGps = intent.getDoubleExtra("gpsX", 0);
         yGps = intent.getDoubleExtra("gpsY", 0);
+        name = intent.getStringExtra("station");
 
-        number.setText(intent.getStringExtra("bus"));
-        currentTime.setText(intent.getStringExtra("time"));
+        stationHead.setText(name);
+
+        StationGpsValue gps = new StationGpsValue();
+        stationLatitude = gps.getLatitude();
+        stationLongitude = gps.getLongitude();
+        stationName = gps.getName();
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -95,7 +124,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         LatLng location = new LatLng(xGps, yGps);
         CameraPosition position = new CameraPosition.Builder().target(location)
-                .zoom(15f).build();
+                .zoom(17f).build();
         mMap.moveCamera(CameraUpdateFactory.newCameraPosition(position));
 
         /*
@@ -105,11 +134,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.addMarker(markerOptions);
         */
 
-        mMap.addMarker(new MarkerOptions().position(location).title(Geocoding())
-        .snippet("(" + xGps + ", " + yGps + ")"));
+        mMap.addMarker(new MarkerOptions().position(location).title(Geocoding(location))
+        .snippet("(" + location.latitude + ", " + location.longitude + ")"));
 
         new GpsDataUpdate().start();
 
+        /*
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng latLng) { // 맵 클릭시 기존의 마커를 지우고 새로운 마커를 표기
@@ -125,17 +155,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 mMap.addMarker(marker);
             }
         });
+        */
     }
 
     class GpsDataUpdate extends Thread{
 
         public void run(){
-
             try {
                 StringBuffer sb = new StringBuffer();
 
                 while(loopFlag) {
-
                     HttpServerConnect http = new HttpServerConnect();
                     String jsonPage = http.getData(
                             "http://13.124.201.205/k2m.php");
@@ -157,10 +186,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     Message message = handler.obtainMessage();
                     Bundle bundle = new Bundle();
                     bundle.putString("bcode", code);
-                    bundle.putInt("bnum", num); // 테스트용
+                    bundle.putString("btime", time); // 테스트용
                     message.setData(bundle);
                     handler.sendMessage(message);
-                    num += 1;
 
                     Thread.sleep(5000);
                 }
@@ -168,16 +196,29 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
         }
     }
 
-    public String Geocoding() { // 입력한 위도 경도를 주소 문자열로 변환해줌
+    public void stationMarking(GoogleMap map){
+
+        stationGps = new ArrayList<LatLng>();
+        for(int i = 0; i < stationLatitude.size(); i++){
+            stationGps.add(new LatLng(stationLatitude.get(i), stationLongitude.get(i)));
+            map.addMarker(new MarkerOptions().position(stationGps.get(i)).
+                    icon(BitmapDescriptorFactory.fromBitmap(busStation)).
+                    title(stationName.get(i) + "").
+                    snippet(Geocoding(stationGps.get(i)) + "\n" +
+                            "(" + stationLatitude.get(i) + ", " +
+                            stationLongitude.get(i) + ")").draggable(true));
+        }
+    }
+
+    public String Geocoding(LatLng lat) { // 입력한 위도 경도를 주소 문자열로 변환해줌
         Geocoder geocoder = new Geocoder(getApplicationContext());
         List<Address> addresses;
 
         try {
-            addresses = geocoder.getFromLocation(xGps, yGps, 1);
+            addresses = geocoder.getFromLocation(lat.latitude, lat.longitude, 1);
 
         } catch (IOException e) {
             e.printStackTrace();
