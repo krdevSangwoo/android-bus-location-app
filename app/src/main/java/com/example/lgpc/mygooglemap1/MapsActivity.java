@@ -106,6 +106,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         stationLatitude = gps.getLatitude();
         stationLongitude = gps.getLongitude();
         stationName = gps.getName();
+        stationGps = gps.getGps();
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -201,9 +202,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     public void stationMarking(GoogleMap map){
 
-        stationGps = new ArrayList<LatLng>();
         for(int i = 0; i < stationLatitude.size(); i++){
-            stationGps.add(new LatLng(stationLatitude.get(i), stationLongitude.get(i)));
             map.addMarker(new MarkerOptions().position(stationGps.get(i)).
                     icon(BitmapDescriptorFactory.fromBitmap(busStation)).
                     title(stationName.get(i) + "").

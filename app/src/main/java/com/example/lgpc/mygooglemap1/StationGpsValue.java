@@ -1,5 +1,7 @@
 package com.example.lgpc.mygooglemap1;
 
+import com.google.android.gms.maps.model.LatLng;
+
 import java.util.ArrayList;
 
 public class StationGpsValue {
@@ -7,6 +9,7 @@ public class StationGpsValue {
     ArrayList<Double> stationLatitude = new ArrayList<Double>();
     ArrayList<Double> stationLongitude = new ArrayList<Double>();
     ArrayList<String> stationName = new ArrayList<String>();
+    ArrayList<LatLng> stationGps = new ArrayList<LatLng>();
 
     public ArrayList getLatitude(){
         stationLatitude.add(37.274689);
@@ -33,5 +36,12 @@ public class StationGpsValue {
         stationName.add("인사관");
         stationName.add("이공관");
         return stationName;
+    }
+
+    public ArrayList getGps() {
+        for (int i = 0; i < stationLatitude.size(); i++) {
+            stationGps.add(new LatLng(stationLatitude.get(i), stationLongitude.get(i)));
+        }
+        return stationGps;
     }
 }
