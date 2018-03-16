@@ -39,12 +39,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     Bitmap bus, busStation;
     ArrayList<Double> stationLatitude, stationLongitude;
     ArrayList<String> stationName;
-    ArrayList<LatLng> stationGps;
+    ArrayList<LatLng> stationLatLng;
 
     // 실시간 처리
     Handler handler = new Handler(new Handler.Callback(){
         public boolean handleMessage(Message message){
-            Log.i("CheckOnLog", "onHandler");
+            Log.i("CheckOnLog", "onHandler_Map");
 
             Bundle bundle = message.getData();
             gps1.setText(latitude);
@@ -66,15 +66,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             stationMarking(mMap);
 
-            mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
-                @Override
-                public boolean onMarkerClick(Marker marker) {
-                    stationHead.setText(marker.getTitle());
-                    stationInform.setText(marker.getSnippet());
-                    return false;
-                }
-            });
-
             mMap.addMarker(new MarkerOptions().position(busLocation).
                     icon(BitmapDescriptorFactory.fromBitmap(bus)).
                     title(Geocoding(busLocation)).
@@ -85,6 +76,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
@@ -101,12 +93,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         name = intent.getStringExtra("station");
 
         stationHead.setText(name);
+        stationInform.setText(Geocoding(new LatLng(xGps, yGps)) + "\n"
+        + "(" + xGps + ", " + yGps + ")");
+        loopFlag = true;
 
         StationGpsValue gps = new StationGpsValue();
         stationLatitude = gps.getLatitude();
         stationLongitude = gps.getLongitude();
         stationName = gps.getName();
-        stationGps = gps.getGps();
+        stationLatLng = gps.getLatLng();
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -114,9 +109,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mapFragment.getMapAsync(this);
     }
 
+    // 마지막에 요부분만 추가함!
+    @Override
+    protected void onStop() {
+        loopFlag = false; // 스레드-핸들러 무한루프 중지
+        super.onStop();
+    }
+
     public void onBackPressed(){ // 뒤로가기 버튼
         super.onBackPressed();
-        loopFlag = false;
     }
 
     @Override
@@ -134,12 +135,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 "(" + xGps + ", " + yGps + ")");
         mMap.addMarker(markerOptions);
         */
-
-        mMap.addMarker(new MarkerOptions().position(location).title(Geocoding(location))
-        .snippet("(" + location.latitude + ", " + location.longitude + ")"));
-
         new GpsDataUpdate().start();
 
+        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                stationHead.setText(marker.getTitle());
+                stationInform.setText(marker.getSnippet());
+                xGps = marker.getPosition().latitude;
+                yGps = marker.getPosition().longitude;
+
+                return false;
+            }
+        });
         /*
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
@@ -174,7 +182,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     JSONArray jArr = json.getJSONArray("MyData");
                     json = jArr.getJSONObject(0);
 
-                    Log.i("CheckOnLog", "onThreadRun");
+                    Log.i("CheckOnLog", "onThreadRun_Map");
 
                     code = json.getString("번호");
                     latitude = json.getString("위도");
@@ -187,7 +195,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     Message message = handler.obtainMessage();
                     Bundle bundle = new Bundle();
                     bundle.putString("bcode", code);
-                    bundle.putString("btime", time); // 테스트용
+                    bundle.putString("btime", time);
                     message.setData(bundle);
                     handler.sendMessage(message);
 
@@ -203,10 +211,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void stationMarking(GoogleMap map){
 
         for(int i = 0; i < stationLatitude.size(); i++){
-            map.addMarker(new MarkerOptions().position(stationGps.get(i)).
+            map.addMarker(new MarkerOptions().position(stationLatLng.get(i)).
                     icon(BitmapDescriptorFactory.fromBitmap(busStation)).
                     title(stationName.get(i) + "").
-                    snippet(Geocoding(stationGps.get(i)) + "\n" +
+                    snippet(Geocoding(stationLatLng.get(i)) + "\n" +
                             "(" + stationLatitude.get(i) + ", " +
                             stationLongitude.get(i) + ")").draggable(true));
         }

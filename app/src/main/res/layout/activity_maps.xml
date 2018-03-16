@@ -9,25 +9,21 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="곧 바뀜"
         android:id="@+id/number" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="곧 바뀜"
         android:id="@+id/gps1" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="곧 바뀜"
         android:id="@+id/gps2" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="곧 바뀜"
         android:id="@+id/currentTime" />
 
     <fragment android:id="@+id/map"

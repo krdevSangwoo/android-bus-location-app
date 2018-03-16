@@ -6,10 +6,11 @@ import java.util.ArrayList;
 
 public class StationGpsValue {
 
-    ArrayList<Double> stationLatitude = new ArrayList<Double>();
-    ArrayList<Double> stationLongitude = new ArrayList<Double>();
-    ArrayList<String> stationName = new ArrayList<String>();
-    ArrayList<LatLng> stationGps = new ArrayList<LatLng>();
+    private ArrayList<Double> stationLatitude = new ArrayList<Double>();
+    private ArrayList<Double> stationLongitude = new ArrayList<Double>();
+    private ArrayList<Double> stationDistance = new ArrayList<Double>();
+    private ArrayList<String> stationName = new ArrayList<String>();
+    private ArrayList<LatLng> stationLatLng = new ArrayList<LatLng>();
 
     public ArrayList getLatitude(){
         stationLatitude.add(37.274689);
@@ -38,10 +39,37 @@ public class StationGpsValue {
         return stationName;
     }
 
-    public ArrayList getGps() {
+    public ArrayList getLatLng() {
         for (int i = 0; i < stationLatitude.size(); i++) {
-            stationGps.add(new LatLng(stationLatitude.get(i), stationLongitude.get(i)));
+            stationLatLng.add(new LatLng(stationLatitude.get(i), stationLongitude.get(i)));
         }
-        return stationGps;
+        return stationLatLng;
+    }
+
+    public ArrayList getStationDistance(){
+        for(int i = 0; i < stationLatitude.size() - 1; i++){
+            stationDistance.add(getDistance(new LatLng(stationLatitude.get(i),
+                    stationLongitude.get(i)), new LatLng(stationLatitude.get(i+1),
+                    stationLongitude.get(i+1))));
+        }
+        return stationDistance;
+    }
+
+    public double getDistance(LatLng bus, LatLng station){
+        final int RADIUS = 6371;
+        double lat1 = bus.latitude;
+        double lat2 = station.latitude;
+        double lon1 = bus.longitude;
+        double lon2 = station.longitude;
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1))
+                * Math.cos(Math.toRadians(lat2)) * Math.sin(dLon / 2)
+                * Math.sin(dLon / 2);
+        double c = 2 * Math.asin(Math.sqrt(a));
+        double value = RADIUS * c * 1000; // m단위 기준, *1000빼면 km
+
+        return value;
     }
 }
